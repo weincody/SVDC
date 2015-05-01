@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Specification-Vendor: utgenome.org
+Specification-Title: picard
+Specification-Version: 1.86p
+

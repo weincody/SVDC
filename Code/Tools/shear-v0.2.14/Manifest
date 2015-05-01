@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+Class-Path: ../GenomeAnalysisTK-3.2-2/GenomeAnalysisTK.jar
+Main-Class: edu.umn.cs.kumarbio.shear.Shear

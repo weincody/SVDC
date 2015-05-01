@@ -1,0 +1,79 @@
+Welcome to DWGSIM.
+
+Please see the file LICENSE for details.
+Please see the file INSTALL for installation instructions;
+
+This software package has limited support since it is in active development.
+
+Please see the following page for more details:
+https://sourceforge.net/apps/mediawiki/dnaa/index.php?title=Whole_Genome_Simulation
+
+Program: dwgsim (short read simulator)
+Version: 0.1.11
+Contact: Nils Homer <dnaa-help@lists.sourceforge.net>
+
+Usage:   dwgsim [options] <in.ref.fa> <out.prefix>
+
+Options:
+         -e FLOAT      per base/color/flow error rate of the first read [from 0.020 to 0.020 by 0.000]
+         -E FLOAT      per base/color/flow error rate of the second read [from 0.020 to 0.020 by 0.000]
+         -i            use the inner distance instead of the outer distance for pairs [False]
+         -d INT        outer distance between the two ends for pairs [500]
+         -s INT        standard deviation of the distance for pairs [50.000]
+         -N INT        number of read pairs (-1 to disable) [-1]
+         -C FLOAT      mean coverage across available positions (-1 to disable) [100.00]
+         -1 INT        length of the first read [70]
+         -2 INT        length of the second read [70]
+         -r FLOAT      rate of mutations [0.0010]
+         -F FLOAT      frequency of given mutation to simulate low fequency somatic mutations [0.5000]
+                           NB: freqeuncy F refers to the first strand of mutation, therefore mutations
+                           on the second strand occour with a frequency of 1-F
+         -R FLOAT      fraction of mutations that are indels [0.10]
+         -X FLOAT      probability an indel is extended [0.30]
+         -I INT        the minimum length indel [1]
+         -y FLOAT      probability of a random DNA read [0.05]
+         -n INT        maximum number of Ns allowed in a given read [0]
+         -c INT        generate reads for [0]:
+                           0: Illumina
+                           1: SOLiD
+                           2: Ion Torrent
+         -S INT        generate reads [0]:
+                           0: default (opposite strand for Illumina, same strand for SOLiD/Ion Torrent)
+                           1: same strand (mate pair)
+                           2: opposite strand (paired end)
+         -f STRING     the flow order for Ion Torrent data [(null)]
+         -B            use a per-base error rate for Ion Torrent data [False]
+         -H            haploid mode [False]
+         -z INT        random seed (-1 uses the current time) [-1]
+         -m FILE       the mutations txt file to re-create [not using]
+         -b FILE       the bed-like file set of candidate mutations [(null)]
+         -v FILE       the vcf file set of candidate mutations (use pl tag for strand) [(null)]
+         -x FILE       the bed of regions to cover [not using]
+         -P STRING     a read prefix to prepend to each read name [not using]
+         -q STRING     a fixed base quality to apply (single character) [not using]
+         -h            print this message
+
+Note: For SOLiD mate pair reads and BFAST, the first read is F3 and the second is R3. For SOLiD mate pair reads
+and BWA, the reads in the first file are R3 the reads annotated as the first read etc.
+
+Note: The longest supported insertion is 4294967295.
+
+
+Simulating one million 30 bp single end reads
+
+dwgsim -1 30 -2 0 -N 1000000 hg19.fa read
+
+Introducing a 5% sequencing error
+
+dwgsim -e 0.05 -1 30 -2 0 -N 1000000 hg19.fa read
+
+Introducing a 2% substitution error rate
+
+dwgsim -e 0.02 -c 0 -1 30 -2 0 -N 1000000 hg19.fa read
+
+Introducing a 2% insertion/deletion rate
+
+dwgsim -e 0.02 -B -f CTAG -c 2 -1 30 -2 0 -N 1000000 hg19.fa read
+
+Just a note that this really is a 2% homopolymer (a stretch of the same nucleotides) error rate based on your input flow order, not a general 2% indel rate.
+

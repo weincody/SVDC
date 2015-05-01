@@ -1,0 +1,107 @@
+normIdealSim
+Instructions for normal ideal simulation on Chromosome 11 (Table 3.1)
+
+Note that you must manually check all files are in the right location after each step. All generated data should go into /Users/codyweinberger/Desktop/\*HonorsThesis/Data/normIdealSim after each step.
+
+##### 1. Simulate SVs and generate somatic, cancer genomes from reference genome #####
+Notes: Run on human reference to generate somatic ref. Run second time on generated somatic ref to generate cancer ref.
+
+### CODE
+
+*cd /Users/codyweinberger/Desktop/\*HonorsThesis/Code/normIdealSim
+
+cmd (genome not yet cleaned) [general]: python simSV.py <path to genome/chromosome fasta> <output root name> <# SVs to be simulated> <is_clean (F if not/empty if is)>
+
+cmd (genome not yet cleaned) [practice]: python simSV.py ../Data/normIdealSim/Homo_sapiens.GRCh37.75.dna.chromosome.11.fa Chrom11_sim 10 F
+
+*cmd (already cleaned somatic) [practice]: python simSV.py ../Data/normIdealSim/clean_Homo_sapiens.GRCh37.75.dna.chromosome.11.fa Chrom11SomaticRef 10
+
+*cmd (already cleaned cancer) [practice]: python simSV.py ../Data/normIdealSim/Chrom11SomaticRef.fa Chrom11CancerRef 10
+
+@output: Chrom11SomaticRef.fa, Chrom11CancerRef.fa
+
+##### 2. Generate reads from somatic and cancer genomes #####
+Notes: Run on somatic ref once to generate somatic reads. Run second time on cancer ref to generate cancer reads.
+
+### CODE
+
+cmd (somatic reads) [general]: ../Tools/DWGSIM/dwgsim -e <error rate 1st read> -E <error rate 2nd read> -r <mutation rate> -N <number of read pairs> <path to input (simulated) somatic genome/chromosome fasta> <somatic reads output root name> 
+
+cmd (cancer reads) [general]: ../Tools/DWGSIM/dwgsim -e <error rate> -E <error rate 2nd read> -r <mutation rate> -N <number of read pairs> <path to input (simulated) cancer genome/chromosome fasta> <cancer reads output root name> 
+
+*cmd (somatic reads) [practice]: ../Tools/DWGSIM/dwgsim -e 0.0 -E 0.0 -r 0.0 -N 10000000 ../Data/normIdealSim/Chrom11SomaticRef.fa chrom11SomaticReads
+
+*cmd (cancer reads) [practice]: ../Tools/DWGSIM/dwgsim -e 0.0 -E 0.0 -r 0.0 -N 10000000 ../Data/normIdealSim/Chrom11CancerRef.fa chrom11CancerReads
+
+@output: chrom11SomaticReads.bwa.read1.fastq, chrom11SomaticReads.bwa.read2.fastq, chrom11CancerReads.bwa.read1.fastq, chrom11CancerReads.bwa.read2.fastq
+
+##### 3. Index reference sequences with bowtie2 #####
+Notes: Again, must do once for reference genome and once for cancer genome.
+
+### CODE
+
+cmd [general]: ../Tools/bowtie2-2.2.3/bowtie2-build [options]* <reference_in> <bt2_base>
+
+*cmd (somatic reference) [practice]: ../Tools/bowtie2-2.2.3/bowtie2-build ../Data/normIdealSim/Chrom11SomaticRef.fa chrom11SomaticRef
+
+*cmd (cancer reference) [practice]: ../Tools/bowtie2-2.2.3/bowtie2-build ../Data/normIdealSim/Chrom11CancerRef.fa chrom11CancerRef
+
+@output: `chrom11SomaticRef.1.bt2`, `chrom11SomaticRef.2.bt2`, `chrom11SomaticRef.3.bt2`, `chrom11SomaticRef.4.bt2`, `chrom11SomaticRef.rev.1.bt2`, `chrom11SomaticRef.rev.2.bt2`, `chrom11CancerRef.1.bt2`, `chrom11CancerRef.2.bt2`, `chrom11CancerRef.3.bt2`, `chrom11CancerRef.4.bt2`, `chrom11CancerRef.rev.1.bt2`, `chrom11CancerRef.rev.2.bt2`
+
+##### 4. Align reads to opposing reference in bowtie2 #####
+Notes: Align cancer reads to somatic genome and somatic reads to cancer genome.
+
+### CODE
+
+cmd [general]: ../Tools/bowtie2-2.2.3/bowtie2 --local -x <ref sequence root> -1 <fastq reads 1st mate pairs> -2 <fastq reads 2nd mate pairs> -U <unpaired reads> -S <choose SAM output (root?) name>
+
+*cmd (cancer reads -> somatic genome) [practice]: ../Tools/bowtie2-2.2.3/bowtie2 --local -x ../Data/normIdealSim/chrom11SomaticRef -1 ../Data/normIdealSim/chrom11CancerReads.bwa.read1.fastq -2 ../Data/normIdealSim/chrom11CancerReads.bwa.read2.fastq -S cancerToSomatic(.sam)
+
+*cmd (somatic reads -> cancer genome) [practice]: ../Tools/bowtie2-2.2.3/bowtie2 --local -x ../Data/normIdealSim/chrom11CancerRef -1 ../Data/normIdealSim/chrom11SomaticReads.bwa.read1.fastq -2 ../Data/normIdealSim/chrom11SomaticReads.bwa.read2.fastq -S somaticToCancer(.sam)
+
+@output: cancerToSomatic.sam, somaticToCancer.sam
+
+##### 5. Convert SAM files to BAM files #####
+
+### CODE
+
+cmd [general]: ../Tools/samtools-1.0/samtools view -b -S file.sam > file.bam
+
+*cmd [practice]: ../Tools/samtools-1.0/samtools view -b -S ../Data/normIdealSim/cancerToSomatic.sam > ../Data/normIdealSim/cancerToSomatic_unsorted.bam
+
+*cmd [practice]: ../Tools/samtools-1.0/samtools view -b -S ../Data/normIdealSim/somaticToCancer.sam > ../Data/normIdealSim/somaticToCancer_unsorted.bam
+
+##### 6. Sort BAM files #####
+
+### CODE
+
+cmd [general]: ../Tools/samtools-1.0/samtools sort <infile.bam> <outfile prefix>
+
+*cmd [practice]: ../Tools/samtools-1.0/samtools sort ../Data/normIdealSim/cancerToSomatic_unsorted.bam cancerToSomatic
+
+*cmd [practice]: ../Tools/samtools-1.0/samtools sort ../Data/normIdealSim/somaticToCancer_unsorted.bam somaticToCancer
+
+@output: cancerToSomaticSort.bam, somaticToCancerSort.bam
+
+##### 7. Index BAM files #####
+
+### CODE
+
+cmd [general]: ../Tools/samtools-1.0/samtools index file.bam
+
+*cmd [practice]: ../Tools/samtools-1.0/samtools index ../Data/normIdealSim/cancerToSomatic.bam
+
+*cmd [practice]: ../Tools/samtools-1.0/samtools index ../Data/normIdealSim/somaticToCancer.bam
+
+@output: cancerToSomaticSort.bam.bai, somaticToCancerSort.bam.bai
+
+##### 6. Run DC Pipeline on data #####
+Notes: Many steps contained within one driver script. Must run local version of Socrates. Just roots are okay because proper directories (../Data/normIdealSim) are explicit in driver script.
+
+cmd [general]: python normIdealSimDriver.py --s_ref <somatic bowtie reference root> --c_ref <cancer bowtie reference root> --s_reads <somatic reads bam> --c_reads <cancer reads bam>
+
+*cmd [practice]: python normIdealSimDriver.py --s_ref chrom11Somatic --c_ref chrom11Cancer --s_reads somaticToCancerSort --c_reads cancerToSomaticSort
+
+@output: matchedBPs.txt, unmatchedBPs.txt
+
+

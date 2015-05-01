@@ -1,0 +1,45 @@
+#!/bin/bash -l
+
+# Set the path to your GenomeAnalysisTK.jar here
+GATK_JAR_LOCATION=/your/path/to/GenomeAnalysisTK.jar
+
+###################################
+### DO NOT EDIT BELOW THIS LINE ###
+###################################
+
+# Check for GATK JAR
+if [ ! -f "$GATK_JAR_LOCATION" ]
+then
+	echo "Cannot locate GATK JAR: $GATK_JAR_LOCATION"
+	exit
+fi
+
+# Change GATK package if below version 3.2
+gatkVer=`java -jar $GATK_JAR_LOCATION --version 2>&1 | grep -P -o '^[0-9]+\.[0-9]+'`
+if [ $(bc <<< "$gatkVer < 3.2") -eq 1 ]
+then
+	sed -i 's/import htsjdk.samtools/import net.sf.samtools/' src/edu/umn/cs/kumarbio/shear/*.java
+	sed -i 's/import org.broadinstitute.gatk.utils.commandline/import org.broadinstitute.sting.commandline/' src/edu/umn/cs/kumarbio/shear/*.java
+	sed -i 's/import org.broadinstitute.gatk.engine/import org.broadinstitute.sting.gatk/' src/edu/umn/cs/kumarbio/shear/*.java
+	sed -i 's/import org.broadinstitute.gatk.utils/import org.broadinstitute.sting.utils/' src/edu/umn/cs/kumarbio/shear/*.java
+else
+	sed -i 's/import net.sf.samtools/import htsjdk.samtools/' src/edu/umn/cs/kumarbio/shear/*.java
+	sed -i 's/import org.broadinstitute.sting.commandline/import org.broadinstitute.gatk.utils.commandline/' src/edu/umn/cs/kumarbio/shear/*.java
+	sed -i 's/import org.broadinstitute.sting.gatk/import org.broadinstitute.gatk.engine/' src/edu/umn/cs/kumarbio/shear/*.java
+	sed -i 's/import org.broadinstitute.sting.utils/import org.broadinstitute.gatk.utils/' src/edu/umn/cs/kumarbio/shear/*.java
+fi
+
+# Clean up and set up
+rm -rf bin SHEAR.jar Manifest
+mkdir bin
+
+# Compile classes
+javac -cp "$GATK_JAR_LOCATION" -nowarn -d bin src/edu/umn/cs/kumarbio/*.java src/edu/umn/cs/kumarbio/shear/*.java
+
+# Make Manifest
+echo "Manifest-Version: 1.0" > Manifest
+echo "Class-Path: $GATK_JAR_LOCATION" >> Manifest
+echo "Main-Class: edu.umn.cs.kumarbio.shear.Shear" >> Manifest
+
+# Compile JAR
+jar cfm SHEAR.jar Manifest -C bin .

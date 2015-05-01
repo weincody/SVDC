@@ -1,0 +1,7 @@
+Manifest-Version: 1.0
+Build-Jdk: 1.7.0_51
+Built-By: gsa-engineering
+Created-By: Apache Maven
+Main-Class: org.broadinstitute.gatk.engine.CommandLineGATK
+Archiver-Version: Plexus Archiver
+

@@ -1,0 +1,260 @@
+SHEAR (Sample Heterogeneity Estimation and Assembly by Reference)
+Version:  0.2.14 (beta)
+Website:  http://vk.cs.umn.edu/SHEAR/
+
+This is the README file for the SHEAR program. SHEAR is in active development.
+Please check the above website for newer available versions. Please contact the
+developers at landman@cs.umn.edu to report any problems or for additional help.
+
+
+
+
+
+### DEPENDENCIES ###
+
+SHEAR has a number of dependencies that are required for installing and running:
+
+GATK         http://www.broadinstitute.org/gatk/
+Picard Tools http://picard.sourceforge.net
+SAMtools     http://samtools.sourceforge.net/
+BWA          http://bio-bwa.sourceforge.net/
+CREST        http://www.stjuderesearch.org/site/lab/zhang
+
+SHEAR leverages SV detection to improve the assembly process. This beta version
+of SHEAR must use CREST for this purpose, but future versions will allow for
+plugins of additional SV detection algorithms. BWA is used for local
+re-alignment. GATK, Picard Tools, and SAMtools are used for processing SAM/BAM
+files.
+
+
+
+
+
+### INSTALLATION ###
+
+1. Edit the configure-shear file to set the path to GATK. The GATK_JAR_LOCATION
+   variable at the top must point to your GenomeAnalysisTK.jar file.
+
+2. Run ./configure-shear to compile SHEAR.
+
+3. Before running SHEAR, you must have the bwa and samtools programs included in
+   your PATH environment variable. The gfServer program is also required to be
+   in your PATH for CREST to work (see CREST documentation).
+
+4. Before running SHEAR, the CREST_DIRECTORY environment variable must be set
+   to point to your CREST installation directory (i.e. the folder that contains
+   extractSClip.pl and CREST.pl). The PICARD_DIRECTORY environment variable
+   must also be set to point to your Picard directory (i.e. the folder that
+   contains CleanSam.jar, AddOrReplaceReadGroups.jar, and
+   FixMateInformation.jar).
+   For example:
+     export CREST_DIRECTORY=/your/path/to/crest
+     export PICARD_DIRECTORY=/your/path/to/picard-tools-1.X
+
+
+
+
+
+### USAGE ###
+
+There are two modules to use when running SHEAR.
+
+SHEAR-SV will process a BAM alignment file to find SVs, SNPs, and INDELs and
+estimate the heterogeneity level of those variants. It will output *.report
+files reporing the variants and their heterogeneity levels, and it will output
+*.sdi files that can be used for SHEAR-Assemble to reconstruct the new genome.
+
+Note that heterogeneity estimates are estimates of the inter-cellular
+heterogeneity, with the assumption that all variants are homozygous within
+cells (i.e. present on both chromosomes). So a heterogeneity estimation of 50%
+for a variant could suggest that 50% of the cells in the sequencing sample are
+homozygous for the variant, or that 100% of the cells in the sequencing sample
+are heterozygous for the deletion.
+
+SHEAR-Assemble takes a reference genome and a *.sdi file to create a new
+personal genome.
+
+To run SHEAR-SV, the usage is:
+java -jar SHEAR.jar sv [options]
+
+Options:
+    -p <prefix>                        Prefix for all generated files. Required.
+
+    -b <bam_file>                      BAM alignment file containing the input
+                                       sequences to the assembly. Must have BAM
+                                       index file (i.e. *.bam.bai) in same
+                                       directory. Required.
+
+    -f <fasta_reference_file>          Reference file (FASTA format) to be used
+                                       for guiding assembly. Must have FASTA
+                                       index file (i.e. *.fa.fai) and dictionary
+                                       file (i.e. *.dict) in same directory.
+                                       Required.
+
+    -i <bwa_index_prefix>              Prefix of the BWA index files for this
+                                       reference (i.e. <bwa_index_prefix>.sa,
+                                       <bwa_index_prefix>.pac, etc.). Uses
+                                       <fasta_reference_file> by default.
+
+    -t <two_bit_reference_file>        Reference file (2bit format) to be used
+                                       for guiding assembly. Required.
+
+    -r <region>                        Region of the input alignment to analyze
+                                       (i.e. "chr1" for full chromosome or
+                                       "chr1:10000-15000" for a particular
+                                       region, including endpoints). Coordinates
+                                       are 1-based. Optional.
+
+    --preds <crest_pred_file>          Pre-existing *.predSV.txt file generated
+                                       by CREST for this alignment. Can be
+                                       useful to use if CREST has already been
+                                       run on this alignment independently, or
+                                       if SHEAR was interrupted and you want to
+                                       continue from the previous intermediary
+                                       results. Optional.
+
+    --min-het <min_het_threshold>      Minimum estimated heterogeneity level for
+                                       a variant to be included in the results.
+                                       Must be a numeric value between 0 and 1
+                                       (i.e. "--min-het 0.2" would only output
+                                       variants that have an estimated).
+                                       heterogeneity level of at least 20%.
+                                       Optional.
+
+    --sv-only                          "SV Only" prediction mode. Will skip
+                                       SNP/INDEL prediction and only return
+                                       *.sdi and *.report results for SVs.
+
+    -d                                 Debugging mode. Will keep all
+                                       intermediary files and produce more
+                                       verbose output information.
+
+The gfServer program requires a 2bit reference file. This can be created using
+the faToTwoBit program that comes bundled with blat
+(http://users.soe.ucsc.edu/~kent/src/).
+
+To run SHEAR-Assemble, the usage is:
+java -jar SHEAR.jar assemble [options]
+
+Options:
+    -s <sdi_file>                      SDI file produced by SHEAR's 'sv' command
+                                       containing the SVs to use to create the
+                                       new genomic sequence.
+
+    -f <fasta_reference_file>          Reference file (FASTA format) to be used
+                                       for guiding assembly.
+
+    -o <output_fasta_file>             FASTA file to output. Required.
+
+    -d                                 Debugging mode. Will keep all
+                                       intermediary files and produce more
+                                       verbose output information.
+
+SHEAR-SV may produce SV calls that overlap with each other. If the *.sdi file is
+left as is, SHEAR-Assemble will skip over SVs that overlap with ones already
+processed while constructing the new genome. The *.sdi file can be modified
+before running SHEAR-Assemble to select only the SVs of interest. A future
+version of SHEAR will help automate this step.
+
+
+
+
+
+### TEST DATA ###
+
+This SHEAR package comes bundled with some test data in the test-data directory
+to help verify proper installation and understand how to run SHEAR.
+
+The simulated-data.bam file contains paired-end reads sampled from a variant of
+the syn.fa sequence that contains three deletions present in 100% of the
+sequencing sample. Running SHEAR-SV on this alignment data should produce the
+simulated-data.*.sdi and simulated-data.*.report files. For example:
+
+export CREST_DIRECTORY=/your/path/to/crest
+export PICARD_DIRECTORY=/your/path/to/picard-tools-1.X
+java -jar SHEAR.jar sv -p simulated-data -b simulated-data.bam -f syn.fa \
+  -i syn.fa -t syn.2bit
+
+The variant personal genome can then be assembled using SHEAR-Assemble as
+follows:
+java -jar SHEAR.jar assemble -s simulated-data.sdi -f syn.fa \
+  -o simualated-data.fa
+
+
+
+
+
+### CHANGE LOG ###
+
+v0.2.14 (Mar 15 2015)
+- Fixed a bug that would throw an error if SV breakpoints occurred too close to the edge of a FASTA region.
+
+v0.2.13 (Dec 29 2014)
+- Now compatible with the latest versions of Picard (i.e. 1.124+).
+- Fixed a bug with SDI output when translocations are predicted. These are not supposed to show up in SDI files (although support is coming soon) but were getting inserted as null values.
+- Fixed a bug that would throw an error when parsing the -r parameter (i.e. region) for some sequence names.
+- General performance improvements.
+
+v0.2.12 (Sep 11 2014)
+- Now compatible with the latest versions of GATK (i.e. 3.2+). The configure_shear script will detect the version of GATK being used and configure the class paths correctly.
+- Changed how SHEAR interfaces with Picard. Note that now Picard is not referenced during SHEAR compilation, but instead the PICARD_DIRECTORY environment variable should be set at runtime. This should solve various problems that would occur when running SHEAR with conflicting versions of GATK and Picard.
+
+v0.2.11 (Jul 12 2014)
+- Now compatible with the latest versions of Picard (i.e. 1.114+). The configure_shear script will detect the version of Picard being used and configure the class paths correctly.
+- Fixed a bug with SHEAR-Assemble that was throwing an error in some situations when it should have been skipping over an overlapping variants.
+
+v0.2.10 (Jun 15 2014)
+- Added a new parameter (i.e. --min-het) for SHEAR-SV that allows for a minimum threshold for the estimated heterogeneity level in order for variants to be included in the results.
+- Fixed a bug with SHEAR-Assemble that was incorrectly processing input FASTA files with whitespace characters in the sequence header lines.
+
+v0.2.9 (Apr 22 2014)
+- Fixed some compilation issues for certain versions of GATK and Picard.
+- Fixed a bug that would cause SHEAR to crash when provided with input BAM files containing poorly-formatted CIGAR strings, a known issue with certain versions of BWA.
+- Added additional validation for correctly-formatted *.2bit files. This will prevent SHEAR from stalling indefinitely when provided with bad *.2bit files.
+
+v0.2.8 (Feb 11 2014)
+- SHEAR now automatically runs cleanup on BAM input files to fix common formatting errors before processing.
+
+v0.2.7 (Jan 28 2014)
+- Fixed a bug that would result in SNPs not being properly represented in the output SDI files.
+- Output report files now contain reference/variant bases for SNPs, deletions, insertions, and inversions.
+
+v0.2.6 (Nov 14 2013)
+- Fixed a bug that would throw an error for certain types of inversion SVs.
+- Fixed cleanup of temporary files.
+- Fixed a bug related to processing alignments with no detectable SVs.
+
+v0.2.5 (Oct 30 2013)
+- Fixed a minor bug that would throw an error during local realignment for bad SAM flags in BWA-SW output.
+
+v0.2.4 (Oct 21 2013)
+- Fixed minor bugs that would occasionally prevent gfServer from locating a valid open port to use.
+
+v0.2.3 (Sep 18 2013)
+- Improvements to the local re-alignment algorithm. Soft-clipped reads should mostly remain in their original neighborhoods now, rather than jump to the corresponding breakpoint.
+- Added a "--preds" option that can specify a pre-existing CREST prediction file (i.e. *.predSV.txt) to be used to begin the SHEAR pipeline. This is useful if CREST has already been run on the alignment, so that that doesn't have to be repeated, or to resume a previous run of SHEAR that exited.
+- Minor improvements to output log information.
+
+v0.2.2 (Sep 9 2013)
+- Fixed a bug that was would occasionally cause gfServer to start improperly and hang if two instances of SHEAR were started at nearly the same time on the same node. This was due to both instances of gfServer attempting to reserver the same port number.
+
+v0.2.1 (Sep 6 2013)
+- SHEAR-SV now has support for SNP/INDEL calling via GATK's HaplotypeCaller. SNPs and INDELs will be predicted on the original alignment and their heterogeneity level will be estimated. These will be included in the outputted SDI file to be used by SHEAR-Assemble. SHEAR can be limited to detecting and assembling SVs only via the "--sv-only" option for SHEAR-SV.
+- Added an argument to run SHEAR-SV on only a select region or locus in the alignment (e.g. -r chr1:10000-15000).
+- Now accepts relative path for 2bit file instead of only absolute path.
+- Less clutter outputted in normal (i.e. non-debug) mode.
+- Slight speed improvements.
+- Various code cleanup, especially with error handling.
+
+v0.1.2 (Jul 9 2013)
+- Fixed a bug that caused problems when two instances of SHEAR were run on the same machine at near the same time due to colliding ports for their respective gfServers. The fix requires UNIX's lsof and pgrep commands to be on the PATH, so Windows support is dropped for now. Hopefully this will be added back in a future version.
+- Fixed a bug that caused the SHEAR process to hang after an error if gfServer is still open.
+- Read groups are no longer required for input BAM alignment. If read group information is missing it will be automatically added by SHEAR.
+
+v0.1.1 (May 13 2013)
+- Original release
+
+
+
+
+

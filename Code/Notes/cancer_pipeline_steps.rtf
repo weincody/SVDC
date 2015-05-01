@@ -1,0 +1,419 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1265\cocoasubrtf190
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fmodern\fcharset0 Courier;\f2\fmodern\fcharset0 Courier-Bold;
+\f3\froman\fcharset0 Times-Roman;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue233;\red82\green0\blue38;\red101\green0\blue97;
+}
+\margl1440\margr1440\vieww22580\viewh8100\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0\fs24 \cf0 ############################################\
+\
+#get sample sequences from 1000 genomes project\
+\
+link: ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/\
+file: HG01950.chrom11.ILLUMINA.bwa.PEL.low_coverage.20120522.bam\
+\
+
+\b #download human reference genome\
+link: ftp://ftp.ensembl.org/pub/release-75/fasta/homo_sapiens/dna/\
+file: Homo_sapiens.GRCh37.75.dna.chromosome.11.fa
+\b0 \
+\
+############################################\
+\
+tumor-normal pairs from thyroid cancer study\
+{\field{\*\fldinst{HYPERLINK "http://www.ncbi.nlm.nih.gov/biosample?LinkName=bioproject_biosample_all&from_uid=211965"}}{\fldrslt http://www.ncbi.nlm.nih.gov/biosample?LinkName=bioproject_biosample_all&from_uid=211965}}\
+tumor T1: {\field{\*\fldinst{HYPERLINK "http://www.ncbi.nlm.nih.gov/biosample/2250917"}}{\fldrslt http://www.ncbi.nlm.nih.gov/biosample/2250917}}	{\field{\*\fldinst{HYPERLINK "http://www.ncbi.nlm.nih.gov/sra/SRX322331"}}{\fldrslt http://www.ncbi.nlm.nih.gov/sra/SRX322331}}\
+normal N1: {\field{\*\fldinst{HYPERLINK "http://www.ncbi.nlm.nih.gov/biosample/2250907"}}{\fldrslt http://www.ncbi.nlm.nih.gov/biosample/2250907}}	{\field{\*\fldinst{HYPERLINK "http://www.ncbi.nlm.nih.gov/sra/SRX322321"}}{\fldrslt http://www.ncbi.nlm.nih.gov/sra/SRX322321}}\
+\
+############################################\
+\
+############################################\
+\
+free tumor-normal pair from complete-genomics company\
+{\field{\*\fldinst{HYPERLINK "ftp://ftp2.completegenomics.com/"}}{\fldrslt ftp://ftp2.completegenomics.com/}}\
+\
+############################################\
+\
+############################################\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
+\cf0 \CocoaLigature0 java -jar CreateSequenceDictionary.jar R=Homo_sapiens.GRCh37.75.dna.chromosome.11.fa O=Homo_sapiens.GRCh37.75.dna.chromosome.11.dict\CocoaLigature1 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 faToTwoBit <input fasta> <output name>\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
+\cf0 \CocoaLigature0 bwa index Homo_sapiens.GRCh37.75.dna.chromosome.11.fa\CocoaLigature1 \
+\CocoaLigature0 java -jar SHEAR.jar sv -p chrom11OUT -b /Users/codyweinberger/shear-v0.2.11/HG01950.chrom11.ILLUMINA.bwa.PEL.low_coverage.20120522.bam -f /Users/codyweinberger/shear-v0.2.11/Homo_sapiens.GRCh37.75.dna.chromosome.11.fa -t /Users/codyweinberger/shear-v0.2.11/chrom11.2bit\CocoaLigature1 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 \
+############################################\
+\
+
+\b #simulate SVs of human reference genome with custom software to obtain somatic genome\
+#simulate mutations of somatic genome (result of reference simulation) to obtain cancer genome\
+command: javac readFASTA.java SV.java SVs.java simulateSVs.java\
+
+\b0 java -Xmx6g simulateSVs /Users/codyweinberger/Socrates/Homo_sapiens.GRCh37.75.dna.chromosome.11.fa\
+\
+(picard) 
+\f1 > java -jar CreateSequenceDictionary.jar R= Homo_sapiens_assembly18.fasta O= Homo_sapiens_assembly18.dict
+\f0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
+
+\f1 \cf0 > java -jar CreateSequenceDictionary.jar R= /Users/codyweinberger/Socrates/Homo_sapiens.GRCh37.75.dna.chromosome.11.fa O= chrom11.dict\
+\pard\pardeftab720
+\cf0 > samtools faidx Homo_sapiens_assembly18.fasta\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0 \cf0 \
+\
+############################################\
+\
+############################################\
+\
+
+\b #generate reads (or simulate mutations) with dwgsim\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
+\cf0 command: ./dwgsim <input fasta> <output root> \
+	ex. ./dwgsim Homo_sapiens.GRCh37.75.dna.chromosome.11.fa chrom11_mut
+\b0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 \
+############################################\
+\
+############################################\
+\
+
+\b #index reference sequences (somatic and cancer) with bowtie2\
+command: bowtie2-build [options]* <reference_in> <bt2_base>\
+	ex. bowtie2-build Homo_sapiens.GRCh37.75.dna.chromosome.11.fa chrom11
+\b0 \
+\
+### Main arguments\
+\
+A comma-separated list of FASTA files containing the reference sequences to be\
+aligned to, or, if `-c` is specified, the sequences\
+themselves. E.g., `<reference_in>` might be `chr1.fa,chr2.fa,chrX.fa,chrY.fa`,\
+or, if `-c` is specified, this might be.\
+`GGTCATCCT,ACGGGTCGT,CCGTTCTATGCGGCTTA`.\
+\
+The basename of the index files to write.  By default, `bowtie2-build` writes\
+files named `NAME.1.bt2`, `NAME.2.bt2`, `NAME.3.bt2`, `NAME.4.bt2`,\
+`NAME.rev.1.bt2`, and `NAME.rev.2.bt2`, where `NAME` is `<bt2_base>`.\
+\
+############################################\
+\
+############################################\
+\
+
+\b #build alignments with bowtie2 (cancer reads to somatic genome, somatic reads to cancer genome)\
+\pard\pardeftab720
+
+\f2 \cf0 command: bowtie2 -x <ref sequence root> -1 <fastq reads 1st mate pairs> -2 <fastq reads 2nd mate pairs> -U <unpaired reads> -S <choose SAM output root name>\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0\b0 \cf0 \
+############################################\
+\
+############################################\
+\
+#convert SAM to BAM\
+\pard\pardeftab720
+
+\f3\b \cf0 samtools view -h file.bam > file.sam
+\b0 \
+To convert back to a bam file:\
+
+\b samtools view -b -S file.sam > file.bam
+\b0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0 \cf0 \
+############################################\
+\
+############################################\
+\
+
+\b #run Socrates (locally!) on alignments\
+command: ./Socrates all \'97bowtie2_db <root of bowtie2 ref> <input bam file>
+\b0 \
+\
+############################################\
+\pard\pardeftab720
+\cf0 \
+Socrates annotate\
+\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
+\cf0 \CocoaLigature0 java -Xmx4g -cp "/Users/codyweinberger/Desktop/HonorsThesis/Code/Tools/Socrates/bin:lib/*" net.wehi.socrates.AnnotatePairedClusters --normal NORMAL results_Socrates_paired_HG03006.chrom11.ILLUMINA.bwa.BEB.low_coverage.20130415_long_sc_l25_q5_m5_i95.txt\CocoaLigature1 \
+\pard\pardeftab720
+\cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 ############################################\
+\
+
+\b #output flanking bases to FASTA from each set of breakpoints using custom java script\
+command: javac BP.java BPs.java exportFlanks.java\
+java exportFlanks <input file> <char genome type (\'91C\'92 or \'92S\'92) > <output file name>\
+	ex. java exportFlanks results_Socrates_paired_HG01950.chrom11.ILLUMINA.bwa.PEL.low_coverage.20120522_long_sc_l25_q5_m5_i95.txt C > CancerBPs.fa
+\b0 \
+\
+############################################
+\f3 \
+\
+
+\f0 ############################################\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f3 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0\b \cf0 #index BP fastas with bowtie2\
+command: bowtie2-build [options]* <reference_in> <bt2_base>\
+	ex. bowtie2-build cancerBPs.fa 2REFcancerBPs\
+\
+
+\b0 ############################################
+\b \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f3\b0 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0 \cf0 ############################################\
+\pard\pardeftab720
+\cf0 \
+#map a single sequence to reference\
+\
+command: bowtie2 -x <bt ref sequence base> -c -U <sequence to align>\
+\
+	ex: bowtie2 -x chrom11 -c -U AGGTTGTGCCGTATAG\
+\
+\
+#map flanking fasta sequences (from opposing) to own reference (DO EACH WAY)\
+command: bowtie2 -x <bt ref sequence base> -c -f <sequence to align> > <output file name>\
+	ex: bowtie2 -x SOMgenome -c -f CANCflanks.fa > REMAPPED_C_to_S_BPs.txt\
+\
+\pard\pardeftab720
+
+\b \cf0 #map flanking fasta sequences (from opposing) to own flanking fast sequences (DO EACH WAY)\
+command: bowtie2 -x <flanking FASTA bowtie root> -c -f <flanking FASTA to align> > <output file name>\
+	ex: bowtie2 -x SOMgenome -c -f CANCflanks.fa > REMAPPED_C_to_S_BPs.txt
+\b0 \
+\
+OUTPUT\
+\
+\pard\pardeftab720\sa240
+
+\f3 \cf0 1) Name of read that aligned.\
+Note that the {\field{\*\fldinst{HYPERLINK "http://samtools.sourceforge.net/SAM1.pdf"}}{\fldrslt \cf2 \ul \ulc2 SAM specification}} disallows whitespace in the read name. If the read name contains any whitespace characters, Bowtie 2 will truncate the name at the first whitespace character. This is similar to the behavior of other tools.\
+2) Sum of all applicable flags. Flags relevant to Bowtie are:\
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trbrdrt\brdrnil \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth440\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadt20 \clpadl20 \clpadb20 \clpadr20 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth8100\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadt20 \clpadl20 \clpadb20 \clpadr20 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720
+
+\f1 \cf0 1\cell 
+\pard\intbl\itap1\pardeftab720\sa240
+
+\f3 \cf0 The read is one of a pair\cell \row
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth440\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadt20 \clpadl20 \clpadb20 \clpadr20 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth8100\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadt20 \clpadl20 \clpadb20 \clpadr20 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720
+
+\f1 \cf0 2\cell 
+\pard\intbl\itap1\pardeftab720\sa240
+
+\f3 \cf0 The alignment is one end of a proper paired-end alignment\cell \row
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth440\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadt20 \clpadl20 \clpadb20 \clpadr20 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth8100\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadt20 \clpadl20 \clpadb20 \clpadr20 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720
+
+\f1 \cf0 4\cell 
+\pard\intbl\itap1\pardeftab720\sa240
+
+\f3 \cf0 The read has no reported alignments\cell \row
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth440\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadt20 \clpadl20 \clpadb20 \clpadr20 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth8100\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadt20 \clpadl20 \clpadb20 \clpadr20 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720
+
+\f1 \cf0 8\cell 
+\pard\intbl\itap1\pardeftab720\sa240
+
+\f3 \cf0 The read is one of a pair and has no reported alignments\cell \row
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth440\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadt20 \clpadl20 \clpadb20 \clpadr20 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth8100\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadt20 \clpadl20 \clpadb20 \clpadr20 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720
+
+\f1 \cf0 16\cell 
+\pard\intbl\itap1\pardeftab720\sa240
+
+\f3 \cf0 The alignment is to the reverse reference strand\cell \row
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth440\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadt20 \clpadl20 \clpadb20 \clpadr20 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth8100\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadt20 \clpadl20 \clpadb20 \clpadr20 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720
+
+\f1 \cf0 32\cell 
+\pard\intbl\itap1\pardeftab720\sa240
+
+\f3 \cf0 The other mate in the paired-end alignment is aligned to the reverse reference strand\cell \row
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth440\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadt20 \clpadl20 \clpadb20 \clpadr20 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth8100\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadt20 \clpadl20 \clpadb20 \clpadr20 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720
+
+\f1 \cf0 64\cell 
+\pard\intbl\itap1\pardeftab720\sa240
+
+\f3 \cf0 The read is mate 1 in a pair\cell \row
+
+\itap1\trowd \taflags0 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrt\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth440\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadt20 \clpadl20 \clpadb20 \clpadr20 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth8100\clftsWidth3 \clmart10 \clmarl10 \clmarb10 \clmarr10 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadt20 \clpadl20 \clpadb20 \clpadr20 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720
+
+\f1 \cf0 128\cell 
+\pard\intbl\itap1\pardeftab720\sa240
+
+\f3 \cf0 The read is mate 2 in a pair\cell \lastrow\row
+\pard\pardeftab720\sa240
+\cf0 Thus, an unpaired read that aligns to the reverse reference strand will have flag 16. A paired-end read that aligns and is the first mate in the pair will have flag 83 (= 64 + 16 + 2 + 1).\
+3) Name of reference sequence where alignment occurs\
+4) 1-based offset into the forward reference strand where leftmost character of the alignment occurs\
+5) Mapping quality\
+CIGAR string representation of alignment\
+Name of reference sequence where mate's alignment occurs. Set to 
+\f1 =
+\f3  if the mate's reference sequence is the same as this alignment's, or 
+\f1 *
+\f3  if there is no mate.\
+1-based offset into the forward reference strand where leftmost character of the mate's alignment occurs. Offset is 0 if there is no mate.\
+Inferred fragment length. Size is negative if the mate's alignment occurs upstream of this alignment. Size is 0 if the mates did not align concordantly. However, size is non-0 if the mates aligned discordantly to the same chromosome.\
+Read sequence (reverse-complemented if aligned to the reverse strand)\
+ASCII-encoded read qualities (reverse-complemented if the read aligned to the reverse strand). The encoded quality values are on the {\field{\*\fldinst{HYPERLINK "http://en.wikipedia.org/wiki/Phred_quality_score"}}{\fldrslt \cf2 \ul \ulc2 Phred quality}} scale and the encoding is ASCII-offset by 33 (ASCII char 
+\f1 !
+\f3 ), similarly to a {\field{\*\fldinst{HYPERLINK "http://en.wikipedia.org/wiki/FASTQ_format"}}{\fldrslt \cf2 \ul \ulc2 FASTQ}} file.\
+Optional fields. Fields are tab-separated. 
+\f1 bowtie2
+\f3  outputs zero or more of these optional fields for each alignment, depending on the type of the alignment:
+\f0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 ############################################\
+\
+############################################\
+\
+#filter and view SAMs for mapped locations\
+output: BP name, flag (direction), matching BP, location on match\
+command: javac SAM.java SAMs.java\
+java SAMs <input SAM file> > <output file name>\
+\
+############################################\
+\
+############################################\
+\
+#compare mapped locations (on own genome) to Socrates breakpoints (on own genome):\
+	- check +/- 30 bases of L/R (C1/C2) mapped locations for breakpoints, record which breakpoint each sequence corresponds to
+\b \
+
+\b0 \
+############################################\
+\
+############################################\
+\
+
+\b #annotate these outputs between somatic and cancers\
+	-determine which breakpoints correspond (did flanking regions map to corresponding breakpoints)\
+	-annotate if indel, inversion, etc.\
+command: javac SAM.java SAMs.java exportMatches.java\
+java exportMatches <remapped somatic reads SAM> <remapped cancer reads SAM>\
+	output: matchedBPs.txt and unmatchedBPs.txt\
+	ex. java exportMatches REMAPPEDsomaticBPs.txt REMAPPEDcancerBPs.txt
+\b0 \
+\
+############################################\
+\pard\pardeftab720
+\cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 ############################################\
+\pard\pardeftab720
+\cf0 \
+#python driver script once have somatic and cancer assemblies\
+commmand: python main.py \'97s_ref <somatic reference bowtie root> \'97c_ref <cancer reference bowtie root> \'97s_reads <somatic reads> \'97c_reads <cancer reads>\
+	ex. python main.py --s_ref chrom11 --c_ref chrom11 --s_reads HG01950.chrom11.ILLUMINA.bwa.PEL.low_coverage.20120522.bam --c_reads HG03006.chrom11.ILLUMINA.bwa.BEB.low_coverage.20130415.bam\
+output: matchedBPs.txt, unmatchedBPs.text\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 ############################################\
+\pard\pardeftab720
+\cf0 \
+\
+mvn compile\
+mvn test\
+mvn package\
+mvn install\
+mvn clean (deletes target folder)\
+\
+\pard\pardeftab720
+
+\f1 \cf0 mvn install:install-file \cf3 -Dfile\cf0 =/Users/codyweinberger/CANCER_GENOME/CompareBPs/target/htsjdk.jar -\cf3 DgroupId\cf0 =htsjdk.samtools \cf3 -DartifactId\cf0 =htsjdk \cf3 -Dversion\cf0 =
+\f2\b \cf4 \{
+\f1\b0 \cf0 1.119
+\f2\b \cf4 \}
+\f1\b0 \cf0  \cf3 -Dpackaging\cf0 =jar\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0 \cf0 Cancer Insertion Examples\
+\pard\pardeftab720
+
+\f3 \cf0 NOVEL BRAF(I599Ins) MUTATION IDENTIFIED IN A FOLLICULAR VARIANT OF PAPILLARY THYROID CARCINOMA A MOLECULAR MODELING APPROACH
+\f1 \
+\pard\pardeftab720
+
+\f0 \cf0 \
+CLASSPATH=\'93$CLASSPATH\'94:/usr/local/jdk.1.6.0/bin\
+CLASSPATH=\'93$CLASSPATH\'94:/Users/codyweinberger/bwa-0.7.10\
+CLASSPATH=\'93$CLASSPATH\'94:/Users/codyweinberger/htsjdk-master/src/java/htsjdk/samtools\
+CLASSPATH=\'93$CLASSPATH\'94:/Users/codyweinberger/Socrates/picard-tools-1.118\
+CLASSPATH=/Users/codyweinberger/shear-v0.2.11/src/sam:$CLASSPATH\
+\
+\
+http://trac.seqan.de/wiki/Tutorial/Sequences\
+http://trac.seqan.de/wiki/Tutorial/IndexedFastaIO\
+\
+ftp://ftp.broadinstitute.org/\
+\
+git checkout master\
+git checkout -b \'93name-of-branch\'94\
+git pull origin master\
+git checkout -b cody-bug-fix //MAKE NEW BRANCH\
+git add DnaSequence.py\
+git commit -m \'91my changes\'92\
+git push origin cody-bug-fix\
+//fork into own repository\
+\
+\
+\
+ssh bioinfoz: (password: cody)\
+ssh Za2\
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural
+\cf0 \CocoaLigature0 scp cancerToSomatic.bam bioinfoz:/home/cody/Data/Socrates\
+\
+\
+socrates=/home/cody/Data/Socrates/\
+\
+libs=$\{socrates\}lib/sam-1.77.jar:$\{socrates\}lib/commons-lang3-3.1.jar:$\{socrates\}lib/commons-cli-1.2.jar:$\{socrates\}lib/picard-1.85.jar:$\{socrates\}lib/snappy-java-1.0.3-rc3.jar\
+\
+java -Xmx4g -cp $\{socrates\}bin:$libs net.wehi.socrates.AnnotatePairedClusters --normal results_Socrates_paired_cancerToSomatic_long_sc_l25_q5_m5_i95.txt\CocoaLigature1 \
+}

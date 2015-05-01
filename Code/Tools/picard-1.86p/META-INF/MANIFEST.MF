@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Implementation-Vendor: utgenome.org
+Implementation-Title: picard
+Implementation-Version: 1.86p
+Implementation-Vendor-Id: org.utgenome.thirdparty
+Specification-Vendor: utgenome.org
+Specification-Title: picard
+Specification-Version: 1.86p
+
