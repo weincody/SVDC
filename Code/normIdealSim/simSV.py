@@ -7,10 +7,8 @@ import numpy as np
 import random
 import pdb
 
-#def doSV(mm, out_file):
-#    s.write(mm[])
-
 def clean(ref_file):
+    # flag = 1
     with open(ref_file, "r") as f:
         with open("clean_"+ref_file, "w") as g:
             header=f.readline()
@@ -18,6 +16,15 @@ def clean(ref_file):
             for x in f:
                 x = x.rstrip()
                 if not x: continue
+
+                # remove leading Ns
+                # if((x[0] == "N") & flag):
+                #    continue
+
+                # remove other Ns
+                if(np.where(x == 'N') == len(x)):
+                    continue
+                # flag = 0
                 print(x, end='', file=g)
 
 def checkOrder(data):
@@ -43,10 +50,9 @@ def SimSV(ref_file, out_file, num_SVs):
 
         # string of reference sequence
         ref = f.read()
-        # original reference sequence
-        o_ref = ref
 
-        ref = ref[0:(len(ref)/1000)] # TEMP
+        # temporary, shorten if not real run
+        # ref = ref[0:(len(ref)/1000)] # TEMP
 
         L = len(ref)
         N = len(ref)

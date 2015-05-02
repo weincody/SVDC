@@ -7,10 +7,8 @@ import numpy as np
 import random
 import pdb
 
-#def doSV(mm, out_file):
-#    s.write(mm[])
-
 def clean(ref_file):
+    # flag = 1
     with open(ref_file, "r") as f:
         with open("clean_"+ref_file, "w") as g:
             header=f.readline()
@@ -18,6 +16,15 @@ def clean(ref_file):
             for x in f:
                 x = x.rstrip()
                 if not x: continue
+
+                # remove leading Ns
+                # if((x[0] == "N") & flag):
+                #    continue
+
+                # remove other Ns
+                if(np.where(x == 'N') == len(x)):
+                    continue
+                # flag = 0
                 print(x, end='', file=g)
 
 # for debugging
@@ -42,24 +49,28 @@ def checkOrder(data):
 def SimSV(ref_file, out_file, num_SVs):
     with open(ref_file, "r") as f:
 
-        # string of reference sequence
+        # string of reference sequence for tumor genome
         ref = f.read()
-        # original reference sequence
-        o_ref = ref
-        
-        ref = ref[0:(len(ref)/1000)] # TEMP
+        # somatic genome (only initial insertions)
+        refS = ref
+
+        # temporary, shorten if not real run
+        # ref = ref[0:(len(ref)/1000)] # TEMP
+        # refS = ref # TEMP
 
         L = len(ref)
         N = len(ref)
         L0 = len(ref)
+        # length tumor genome has changed
         cumIns = 0
+        # length difference between somatic and tumor genomes
+        somMutL = 0
 
         # data type in data structure (object is flexible)
         # dt = np.dtype('>H')
         # dtc = np.dtype('a1')
         dt = np.dtype(object)
 
-        #pdb.set_trace()
         # new index, old index, sequence
         data = np.matrix([range(L), range(L), list(ref)], dtype=dt)
         # SV EVENTS
@@ -85,6 +96,7 @@ def SimSV(ref_file, out_file, num_SVs):
 
             # determine where event occurs (deleted region for translocations)
             ev_loc0 = int((L0/num_SVs)*(i) + abs(random.randint(buf, L0/num_SVs - 3*buf)) + cumIns)
+            ev_loc0S = ev_loc0 - somMutL
 
             ### first create novel INSERTION
             insert = ""
@@ -95,6 +107,7 @@ def SimSV(ref_file, out_file, num_SVs):
                 insert+=random.choice('ATGC')
                 j+=1
             ref = ref[:ev_loc0] + insert + ref[ev_loc0:]
+            refS = refS[:ev_loc0S] + insert + refS[ev_loc0S:]
                 
             # find data index where new index = ev_loc
             ind = int(np.where(data[0,:] == ev_loc0)[1])
@@ -161,6 +174,7 @@ def SimSV(ref_file, out_file, num_SVs):
                 N = N + insert_size
                 L = L + insert_size
                 cumIns += insert_size
+                somMutL += insert_size
                 # add new event column to event matrix
                 events = np.concatenate((events, np.matrix(np.zeros(shape=(1,N), dtype=np.int8))), axis=0)
                 # update new event column with event type at event locations
@@ -188,6 +202,8 @@ def SimSV(ref_file, out_file, num_SVs):
                 # update length of matrices
                 L = L - deletion_size
                 cumIns -= deletion_size
+                somMutL -= deletion_size
+
                 # add new event column to event matrix
                 events = np.concatenate((events, np.matrix(np.zeros(shape=(1,N), dtype=np.int8))), axis=0)
                 # update new event column with event type at event locations
@@ -239,9 +255,15 @@ def SimSV(ref_file, out_file, num_SVs):
             # update number of events counter
             c = c + 1
 
-        with open(out_file+".fa", "wb") as s:
+        with open(out_file+"_tumor.fa", "wb") as s:
             # write the simulated file to output
             s.write(ref)
+            # close the simulated output
+            s.close()
+
+        with open(out_file+"_normal.fa", "wb") as s:
+            # write the simulated file to output
+            s.write(refS)
             # close the simulated output
             s.close()
 
