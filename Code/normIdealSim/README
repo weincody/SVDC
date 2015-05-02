@@ -103,5 +103,3 @@ cmd [general]: python normIdealSimDriver.py --s_ref <somatic bowtie reference ro
 *cmd [practice]: python normIdealSimDriver.py --s_ref chrom11Somatic --c_ref chrom11Cancer --s_reads somaticToCancerSort --c_reads cancerToSomaticSort
 
 @output: matchedBPs.txt, unmatchedBPs.txt
-
-

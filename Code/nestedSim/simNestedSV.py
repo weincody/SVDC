@@ -20,6 +20,25 @@ def clean(ref_file):
                 if not x: continue
                 print(x, end='', file=g)
 
+# for debugging
+def checkOrder(data):
+    last = -1
+    misordered = 0
+    #print(range(data[0].size - 1))
+    for i in range(data[0].size - 1):
+        if(type(data[0,i]) == int):
+            #print(i)
+            #print(last)
+            #print(data[0,i])
+            if data[0,i] != (last + 1):
+                misordered = 1
+                print("MISORDERED")
+                print(i)
+                print(data[:,i])
+                return misordered
+            last = last + 1
+    return misordered
+
 def SimSV(ref_file, out_file, num_SVs):
     with open(ref_file, "r") as f:
 
@@ -27,7 +46,7 @@ def SimSV(ref_file, out_file, num_SVs):
         ref = f.read()
         # original reference sequence
         o_ref = ref
-
+        
         ref = ref[0:(len(ref)/1000)] # TEMP
 
         L = len(ref)
@@ -55,6 +74,8 @@ def SimSV(ref_file, out_file, num_SVs):
         # 4: inversion
         inversion = 4
 
+        # for summary SV counts
+        summary = [0, 0, 0, 0]
         # buf = min size of novel insertion, 1/2 min distance between nested SV and novel insertion edge
         buf = 10
         # c = counter for # events
@@ -63,7 +84,7 @@ def SimSV(ref_file, out_file, num_SVs):
         for i in np.arange(num_SVs):
 
             # determine where event occurs (deleted region for translocations)
-            ev_loc0 = (L0/num_SVs)*(i) + abs(random.randint(buf, L0/num_SVs - 3*buf)) + cumIns
+            ev_loc0 = int((L0/num_SVs)*(i) + abs(random.randint(buf, L0/num_SVs - 3*buf)) + cumIns)
 
             ### first create novel INSERTION
             insert = ""
@@ -76,24 +97,19 @@ def SimSV(ref_file, out_file, num_SVs):
             ref = ref[:ev_loc0] + insert + ref[ev_loc0:]
                 
             # find data index where new index = ev_loc
-            try:
-                ind = int(np.where(data[0,:] == ev_loc0)[1])
-            except: pdb.set_trace()
+            ind = int(np.where(data[0,:] == ev_loc0)[1])
             # format data to insert
-            to_insert = np.matrix([[x + ev_loc0 for x in range(insert_size0)], list('N'*insert_size0), list(insert)], dtype=dt)
+            to_insert = np.matrix([[int(x + ev_loc0) for x in range(insert_size0)], list('N'*insert_size0), list(insert)], dtype=dt)
             # concatenate data back together
             data = np.concatenate((data[:,0:ind], to_insert, data[:,ind:N]), axis=1)
             for k in range((ind + insert_size0),(N + insert_size0)):
                 if(type(data[0,k]) == int):
                     data[0,k] = data[0,k] + insert_size0
-            
-
+                
             # create blank filler matrix to insert into event track list
             to_insert_event = np.matrix(np.zeros(shape=(c+1,insert_size0), dtype=np.int8))
             # combine filler matrix to event matrix so size correct
-            try:
-                events = np.concatenate((events[:,0:ind], to_insert_event, events[:,ind:N]), axis=1)
-            except: pdb.set_trace()
+            events = np.concatenate((events[:,0:ind], to_insert_event, events[:,ind:N]), axis=1)
 
             # update length of matrices
             N = N + insert_size0
@@ -105,13 +121,16 @@ def SimSV(ref_file, out_file, num_SVs):
             events[c+1,ind:(ind+insert_size0)] = initial_insertion
             # update number of events counter
             c = c + 1
-
+            # update SV count for initial insertions
+            summary[0] += 1
 
             ### Type of event within novel insertion
             event_type = abs(random.randint(2, 4))
+            # update SV count for that type
+            summary[event_type - 1] += 1
 
             # determine where nested event occurs (within novel inserted region), has buffer of at least buf to edge of novel insertion
-            ev_loc = abs(random.randint((ev_loc0 + buf), (ev_loc0 + insert_size0 - buf)))
+            ev_loc = int(abs(random.randint((ev_loc0 + buf), (ev_loc0 + insert_size0 - 2*buf))))
 
             ### (nested) INSERTION
             if(event_type == insertion):
@@ -125,17 +144,14 @@ def SimSV(ref_file, out_file, num_SVs):
                 ref = ref[:ev_loc] + insert + ref[ev_loc:]
                 
                 # find data index where new index = ev_loc
-                try:
-                    ind = int(np.where(data[0,:] == ev_loc)[1])
-                except: pdb.set_trace()
+                ind = int(np.where(data[0,:] == ev_loc)[1])
                 # format data to insert
-                to_insert = np.matrix([[x + ev_loc for x in range(insert_size)], list('N'*insert_size), list(insert)], dtype=dt)
+                to_insert = np.matrix([[int(x + ev_loc) for x in range(insert_size)], list('N'*insert_size), list(insert)], dtype=dt)
                 # concatenate data back together
                 data = np.concatenate((data[:,0:ind], to_insert, data[:,ind:N]), axis=1)
                 for k in range((ind + insert_size),(N + insert_size)):
                     if(type(data[0,k]) == int):
                         data[0,k] = data[0,k] + insert_size
-                
 
                 # create blank filler matrix to insert into event track list
                 to_insert_event = np.matrix(np.zeros(shape=(c+1,insert_size), dtype=np.int8))
@@ -150,10 +166,6 @@ def SimSV(ref_file, out_file, num_SVs):
                 # update new event column with event type at event locations
                 events[c+1,ind:(ind+insert_size)] = event_type
 
-                print("INSERTION")
-                print("L = ", L)
-                print("N = ", N)
-                print("data = ", data)
 
             ### DELETION
             if(event_type == deletion):
@@ -162,13 +174,10 @@ def SimSV(ref_file, out_file, num_SVs):
                 ref = ref[:ev_loc] + ref[(ev_loc + deletion_size):]
 
                 # find data index where new index = ev_loc
-                try: 
-                    ind = int(np.where(data[0,:] == ev_loc)[1])
-                except: pdb.set_trace()
+                ind = int(np.where(data[0,:] == ev_loc)[1])
                 # declare ind_2 bc might be existing deletion within bounds of this deletion, so need to extend event more than absolute deletion_size
-                try:
-                    ind_2 = int(np.where(data[0,:] == (ev_loc + deletion_size))[1])
-                except: pdb.set_trace()
+                ind_2 = int(np.where(data[0,:] == (ev_loc + deletion_size))[1])
+
                 # alter indices of deleted region
                 data[0,ind:ind_2] = 'N'
 
@@ -183,11 +192,6 @@ def SimSV(ref_file, out_file, num_SVs):
                 events = np.concatenate((events, np.matrix(np.zeros(shape=(1,N), dtype=np.int8))), axis=0)
                 # update new event column with event type at event locations
                 events[c+1,ind:ind_2] = event_type
-                
-                print("DELETION")
-                print("L = ", L)
-                print("N = ", N)
-                print("data = ", data)
 
 
             ### INVERSION
@@ -198,19 +202,16 @@ def SimSV(ref_file, out_file, num_SVs):
                 ref = ref[:ev_loc] + inverted + ref[(ev_loc + inversion_size):]
                 
                 # find data index where new index = ev_loc (deletion)
-                try:
-                    ind1 = int(np.where(data[0,:] == ev_loc)[1])
-                except: pdb.set_trace()
+                ind1 = int(np.where(data[0,:] == ev_loc)[1])
                 # declare ind_2 bc might be existing deletion within bounds of this deletion, so need to extend event more than absolute deletion_size
-                try:
-                    ind1_2 = int(np.where(data[0,:] == (ev_loc + inversion_size))[1])
-                except: pdb.set_trace()
+                ind1_2 = int(np.where(data[0,:] == (ev_loc + inversion_size))[1])
 
                 # region in index matrix that will be inverted
                 data_to_invert = data[:,ind1:ind1_2]
                 # invert region
                 data_to_invert[:,:] = data_to_invert[:,::-1]
                 # note: sequence and old indices can totally invert, while new indices must be adjusted because of possible N's
+
                 # adjust new indices
                 counter = 0
                 # minimum new index of inverted region
@@ -234,11 +235,6 @@ def SimSV(ref_file, out_file, num_SVs):
                 events = np.concatenate((events, np.matrix(np.zeros(shape=(1,N), dtype=np.int8))), axis=0)
                 # update new event column with event type at event locations
                 events[c+1, ind1:ind1_2] = event_type
-
-                print("INVERSION")
-                print("L = ", L)
-                print("N = ", N)
-                print("data = ", data)
 
             # update number of events counter
             c = c + 1
@@ -266,6 +262,20 @@ def SimSV(ref_file, out_file, num_SVs):
                 print(line, file=s)
             # close the simulated output
             s.close()
+
+        with open(out_file+"_SUMMARY.txt", "wb") as s:
+                line0 = "initial_insertion " + str(summary[0])
+                line1 = "insertion " + str(summary[1])
+                line2 = "deletion " + str(summary[2])
+                line3 = "inversion " + str(summary[3])
+                line4 = "total " + str(sum(summary))
+                print(line0, file=s)
+                print(line1, file=s)
+                print(line2, file=s)
+                print(line3, file=s)
+                print(line4, file=s)
+                s.close()
+                
 
 def main():
     # parse command line options
