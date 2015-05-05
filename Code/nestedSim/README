@@ -1,4 +1,4 @@
-normIdealSim
+nestedSim
 Instructions for normal ideal simulation on Chromosome 11 (Table 3.1)
 
 Note that you must manually check all files are in the right location after each step. All generated data should go into /Users/codyweinberger/Desktop/\*HonorsThesis/Data/normIdealSim after each step.
@@ -8,7 +8,7 @@ Notes: Run on human reference to generate somatic ref. Run second time on genera
 
 ### CODE
 
-*cd /Users/codyweinberger/Desktop/\*HonorsThesis/Code/normIdealSim
+*cd /Users/codyweinberger/Desktop/SVDC/Code/normIdealSim
 
 cmd (genome not yet cleaned) [general]: python simNestedSV.py <path to genome/chromosome fasta> <output root name> <# SVs to be simulated> <is_clean (F if not/empty if is)>
 
@@ -17,6 +17,9 @@ cmd (genome not yet cleaned) [practice]: python simNestedSV.py ../Data/normIdeal
 *cmd (already cleaned somatic) [practice]: python simNestedSV.py ../Data/normIdealSim/clean_Homo_sapiens.GRCh37.75.dna.chromosome.11.fa Chrom11SomaticRef_nested 10
 
 *cmd (already cleaned cancer) [practice]: python simNestedSV.py ../Data/normIdealSim/Chrom11SomaticRef.fa Chrom11CancerRef_nested 10
+
+remote (genome not yet cleaned): python simNestedSV.py chr11.fa chrom11nested 50 F 2>&1 | tee nestedSimOUT.txt &
+disown
 
 @output: Chrom11SomaticRef.fa, Chrom11CancerRef.fa
 
@@ -76,7 +79,7 @@ Notes: Many steps contained within one driver script. Must run local version of 
 
 cmd [general]: python normIdealSim.py --s_ref <somatic bowtie reference root> --c_ref <cancer bowtie reference root> --s_reads <somatic reads bam> --c_reads <cancer reads bam>
 
-*cmd [practice]: python normIdealSim --s_ref chrom11Somatic --c_ref chrom11Cancer --s_reads somaticToCancer --c_reads cancerToSomatic
+*cmd [practice]: python normIdealSim --s_ref chrom11Normal --c_ref chrom11Tumor --s_reads normalToTumor --c_reads tumorToNormal
 
 @output: matchedBPs.txt, unmatchedBPs.txt
 

@@ -263,6 +263,7 @@ def SimSV(ref_file, out_file, num_SVs):
 
 
         with open(out_file+".fa", "wb") as s:
+            s.write(">chr11\n")
             # write the simulated file to output
             s.write(ref)
             # close the simulated output

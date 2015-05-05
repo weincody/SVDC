@@ -18,6 +18,9 @@ cmd (genome not yet cleaned) [practice]: python simSV.py ../Data/normIdealSim/Ho
 
 *cmd (already cleaned cancer) [practice]: python simSV.py ../Data/normIdealSim/Chrom11SomaticRef.fa Chrom11CancerRef 10
 
+remote (genome not yet cleaned): python simSV.py clean_chr11.fa chrom11somatic 50 2>&1 | tee nestedSimOUT.txt &
+disown
+
 @output: Chrom11SomaticRef.fa, Chrom11CancerRef.fa
 
 ##### 2. Generate reads from somatic and cancer genomes #####

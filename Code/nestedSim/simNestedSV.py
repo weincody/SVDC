@@ -8,7 +8,7 @@ import random
 import pdb
 
 def clean(ref_file):
-    flag = 1
+    # flag = 1
     with open(ref_file, "r") as f:
         with open("clean_"+ref_file, "w") as g:
             header=f.readline()
@@ -18,13 +18,13 @@ def clean(ref_file):
                 if not x: continue
 
                 # remove leading Ns
-                if((x[0] == "N") & flag):
-                    continue
+                # if((x[0] == "N") & flag):
+                #    continue
 
                 # remove other Ns
                 if(np.where(x == 'N') == len(x)):
                     continue
-                flag = 0
+                # flag = 0
                 print(x, end='', file=g)
 
 # for debugging
