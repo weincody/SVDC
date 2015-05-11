@@ -44,7 +44,8 @@ public class BP {
 	scanner.useDelimiter("\t");
 	try{
 	    scanner.useDelimiter(":");
-	    C1_realign_chrom = Integer.parseInt(scanner.next());
+	    String s = scanner.next();
+	    C1_realign_chrom = Integer.parseInt(s.replaceAll("[\\D]", ""));
 	    scanner.useDelimiter("\t");
 	    C1_realign_pos = Integer.parseInt(scanner.next().substring(1));
 	    C1_realign_dir = scanner.next().charAt(0);
@@ -60,9 +61,11 @@ public class BP {
 	    C1_avg_realign_mapq = scanner.nextFloat();
 	    
 	    scanner.useDelimiter(":");
-	    C2_realign_chrom = Integer.parseInt(scanner.next().substring(1));
+	    String t = scanner.next().replaceAll("[\\D]", "");
+	    C2_realign_chrom = Integer.parseInt(t.substring(1));
 	    scanner.useDelimiter("\t");
-	    C2_realign_pos = Integer.parseInt(scanner.next().substring(1));
+	    String u = scanner.next().replaceAll("[\\D]", "");
+	    C2_realign_pos = Integer.parseInt(u.substring(1));
 	    C2_realign_dir = scanner.next().charAt(0);
 	    C2_realign_consensus = scanner.next();
 	    C2_anchor = scanner.next();	
