@@ -1,0 +1,146 @@
+normIdealSim batch [0-9]: all rows starting with N removed
+—————————————————————————————————————————————————————————————————————————————————————
+
+python simSV.py ../clean_chr11.fa chr11sim 15
+
+—————————————————————————————————————————————————————————————————————————————————————
+[DC pipeline]
+
+
+../../Tools/DWGSIM/dwgsim -e 0.0 -E 0.0 -r 0.0 -N 1000000 chr11sim_normal.fa chrom11normalReads
+
+../../Tools/DWGSIM/dwgsim -e 0.0 -E 0.0 -r 0.0 -N 1000000 chr11sim_tumor.fa chrom11tumorReads
+
+
+../../Tools/bowtie2-2.2.3/bowtie2-build chr11sim_normal.fa chrom11Normal
+
+../../Tools/bowtie2-2.2.3/bowtie2-build chr11sim_tumor.fa chrom11Tumor
+
+
+../../Tools/bowtie2-2.2.3/bowtie2 --local -x Chrom11Normal -1 chrom11tumorReads.bwa.read1.fastq -2 chrom11tumorReads.bwa.read2.fastq -S tumorToNormal.sam
+
+../../Tools/bowtie2-2.2.3/bowtie2 --local -x Chrom11Tumor -1 chrom11normalReads.bwa.read1.fastq -2 chrom11normalReads.bwa.read2.fastq -S normalToTumor.sam
+
+
+../../Tools/samtools-1.0/samtools view -b -S tumorToNormal.sam > tumorToNormal_unsorted.bam
+
+../../Tools/samtools-1.0/samtools view -b -S normalToTumor.sam > normalToTumor_unsorted.bam
+
+
+../../Tools/samtools-1.0/samtools sort tumorToNormal_unsorted.bam tumorToNormal
+
+../../Tools/samtools-1.0/samtools sort normalToTumor_unsorted.bam normalToTumor
+
+
+../../Tools/samtools-1.0/samtools index tumorToNormal.bam
+
+../../Tools/samtools-1.0/samtools index normalToTumor.bam
+
+
+scp tumorToNormal* bioinfoz:/home/cody/SVDC/Code/normIdealSimTRIALS/normIdealSim9
+
+scp normalToTumor* bioinfoz:/home/cody/SVDC/Code/normIdealSimTRIALS/normIdealSim5
+
+scp chrom11Normal* bioinfoz:/home/cody/SVDC/Code/normIdealSimTRIALS/normIdealSim9
+
+scp chrom11Tumor* bioinfoz:/home/cody/SVDC/Code/normIdealSimTRIALS/normIdealSim9
+
+
+python normIdealSimDriver.py --s_ref chrom11Normal --c_ref chrom11Tumor --s_reads normalToTumor.bam --c_reads tumorToNormal.bam
+
+
+—————————————————————————————————————————————————————————————————————————————————————
+[Socrates only]
+
+scp chrom11tumorReads* bioinfoz:/home/cody/SVDC/Code/normIdeallSimTRIALS/normIdealSim5
+
+scp chrom11normalReads* bioinfoz:/home/cody/SVDC/Code/normIdealSimTRIALS/normIdealSim5
+
+
+
+../Tools/bowtie2-2.2.3/bowtie2-build clean_chr11.fa chr11Ref
+
+
+../../Tools/bowtie2-2.2.3/bowtie2 --local -x ../chr11Ref -1 chrom11tumorReads.bwa.read1.fastq -2 chrom11tumorReads.bwa.read2.fastq -S tumorToRef.sam &
+
+../../Tools/bowtie2-2.2.3/bowtie2 --local -x ../chr11Ref -1 chrom11normalReads.bwa.read1.fastq -2 chrom11normalReads.bwa.read2.fastq -S normalToRef.sam &
+
+
+../../Tools/samtools-1.0/samtools view -b -S tumorToRef.sam > tumorToRef_unsorted.bam &
+
+../../Tools/samtools-1.0/samtools view -b -S normalToRef.sam > normalToRef_unsorted.bam &
+
+
+../../Tools/samtools-1.0/samtools sort tumorToRef_unsorted.bam tumorToRef &
+
+../../Tools/samtools-1.0/samtools sort normalToRef_unsorted.bam normalToRef &
+
+
+../../Tools/samtools-1.0/samtools index tumorToRef.bam
+
+../../Tools/samtools-1.0/samtools index normalToRef.bam
+
+
+scp *Ref.bam* bioinfoz:/home/cody/SVDC/Code/normIdealSimTRIALS/normIdealSim9
+
+scp chr11Ref* bioinfoz:/home/cody/SVDC/Code/normIdealSimTRIALS
+
+
+../../Tools/Socrates/Socrates all --bowtie2_db chr11Ref tumorToRef.bam &
+
+../../Tools/Socrates/Socrates all --bowtie2_db chr11Ref normalToRef.bam &
+
+../../Tools/Socrates/Socrates annotate --noFilter results_Socrates_paired_tumorToRef_long_sc_l25_q5_m5_i95.txt --normal results_Socrates_paired_normalToRef_long_sc_l25_q5_m5_i95.txt &
+
+
+scp bioinfoz:/home/cody/SVDC/Code/normIdealSimTRIALS/normIdealSim8/results_Socrates* .
+
+
+
+javac BP.java BPs.java exportAnnotated.java
+
+javac hitTest.java hitList.java runResults.java
+
+java exportAnnotated results*annotated A > annotatedBPs.txt
+
+java runResults chr11sim > RESULTS.txt
+
+
+
+RESULTS.txt:
+1st entry - matchedBPs
+2nd entry - unmatchedBPs
+3rd entry - Socrates annotated BPs
+
+1st number - insertions
+2nd number - deletions
+3rd number - translocations
+4th number - inversions
+5th number - false positives
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
